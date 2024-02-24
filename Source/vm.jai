@@ -17,6 +17,7 @@ OpCode :: enum u8
 
     Add;
     Sub;
+    Neg;
     Mul;
     Div;
 
@@ -147,6 +148,44 @@ BinopHelperForAllTypes :: (using vm : *VirtualMachine, $func : (a : $T, b : T) -
 
 ExecuteAdd :: #bake_arguments BinopHelperForAllTypes (func = (a, b) => a + b);
 ExecuteSub :: #bake_arguments BinopHelperForAllTypes (func = (a, b) => a - b);
+
+ExecuteNeg :: (using vm : *VirtualMachine) -> ExecuteStatus
+{
+    Helper :: ($T : Type) #expand
+    {
+        v := Pop (`vm, T);
+        Push (`vm, T, -v);
+    }
+
+    type := ReadInstructionOperand (vm, ValueType);
+
+    if #complete type ==
+    {
+    case .Void; #through;
+    case .U8; #through;
+    case .U16; #through;
+    case .U32; #through;
+    case .U64;
+       return .Invalid_Type_Operand;
+    case .S8;
+        Helper (s8);
+    case .S16;
+        Helper (s16);
+    case .S32;
+        Helper (s32);
+    case .S64;
+        Helper (s64);
+    case .F32;
+        Helper (float32);
+    case .F64;
+        Helper (float64);
+    case;
+        return .Invalid_Instruction;
+    }
+
+    return .Ok;
+}
+
 ExecuteMul :: #bake_arguments BinopHelperForAllTypes (func = (a, b) => a * b);
 ExecuteDiv :: #bake_arguments BinopHelperForAllTypes (func = (a, b) => a / b);
 
@@ -240,6 +279,8 @@ ExecuteNextInstruction :: inline (using vm : *VirtualMachine) -> ExecuteStatus
         return ExecuteAdd (vm);
     case .Sub;
         return ExecuteSub (vm);
+    case .Neg;
+        return ExecuteNeg (vm);
     case .Mul;
         return ExecuteMul (vm);
     case .Div;

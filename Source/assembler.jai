@@ -12,6 +12,7 @@ Asm_Mnemonics :: #run -> [OpCode_Count]string
         case .No_Op; return "noop";
         case .Add; return "add";
         case .Sub; return "sub";
+        case .Neg; return "neg";
         case .Mul; return "mul";
         case .Div; return "div";
         case .Push_Const; return "push_const";
@@ -180,6 +181,7 @@ ParseInstruction :: (parser : *AsmParser, bytes : *[..]u8, opcode : OpCode) -> b
 
     case .Add; #through;
     case .Sub; #through;
+    case .Neg; #through;
     case .Mul; #through;
     case .Div; #through;
     case .Pop;
@@ -277,6 +279,7 @@ Disassemble :: (builder : *StringBuilder, bytes : []u8) -> bool
         case .Halt;
         case .Add; #through;
         case .Sub; #through;
+        case .Neg; #through;
         case .Mul; #through;
         case .Div; #through;
         case .Pop;
