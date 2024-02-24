@@ -1,0 +1,7 @@
+push_const f32 69
+push_const f32 1000
+mul f32                 ; 69 * 1000
+push_const f32 105
+add f32                 ; 69000 + 105
+; Result = 69105.0
+halt
