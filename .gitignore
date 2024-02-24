@@ -1,0 +1,14 @@
+Source/Modules/LLVM-17/
+__pycache__/
+*.blend1
+obj/
+.build/
+*.obj
+*.o
+*.pdb
+*.exe
+.vscode/
+*.generated.c
+*.generated.cpp
+main
+yal
