@@ -1,17 +1,33 @@
 #import "Lexer";
 
-Asm_Mnemonics :: string.[
-    "noop",
-    "halt",
-    "add",
-    "sub",
-    "mul",
-    "div",
-    "push_const",
-    "pop",
-];
+// We prevent errors by #complete switching on each value of OpCode
+// instead of having to manually keep track of an implicit order
+Asm_Mnemonics :: #run -> [OpCode_Count]string
+{
+    Get :: (opcode : OpCode) -> string #must
+    {
+        if #complete opcode ==
+        {
+        case .Halt; return "halt";
+        case .No_Op; return "noop";
+        case .Add; return "add";
+        case .Sub; return "sub";
+        case .Mul; return "mul";
+        case .Div; return "div";
+        case .Push_Const; return "push_const";
+        case .Pop; return "pop";
+        }
+    }
 
-#assert Asm_Mnemonics.count == type_info (OpCode).values.count;
+    result : [OpCode_Count]string;
+
+    for type_info (OpCode).values
+        result[it_index] = Get (cast (OpCode) it);
+
+    return result;
+};
+
+#assert Asm_Mnemonics.count == OpCode_Count;
 
 Asm_Type_Names :: string.[
     "void",
