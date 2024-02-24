@@ -32,9 +32,9 @@ main :: ()
         Basic.exit (1);
     }
 
-    if !DumpAssembly (bytes)
+    if !Disassemble (bytes)
     {
-        Println ("Error: Could not dump assembly file");
+        Println ("Error: Could not disassemble file");
         Basic.exit (1);
     }
 

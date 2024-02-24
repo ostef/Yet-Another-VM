@@ -189,7 +189,7 @@ ParseInstruction :: (parser : *AsmParser, bytes : *[..]u8, opcode : OpCode) -> b
 
         if type == .Void
         {
-            SyntaxError (parser, "Invalid type % for instruction %:\n%",
+            SyntaxError (parser, "Invalid type % for % instruction:\n%",
                 Asm_Type_Names[type], Asm_Mnemonics[opcode], LexerGetLine (parser));
 
             return false;
@@ -206,7 +206,7 @@ ParseInstruction :: (parser : *AsmParser, bytes : *[..]u8, opcode : OpCode) -> b
 
         if type == .Void
         {
-            SyntaxError (parser, "Invalid type % for instruction %:\n%",
+            SyntaxError (parser, "Invalid type % for % instruction:\n%",
                 Asm_Type_Names[type], Asm_Mnemonics[opcode], LexerGetLine (parser));
 
             return false;
@@ -258,7 +258,7 @@ ParseAssemblyFile :: (filename : string, file_contents : string) -> []u8 #must, 
     return bytes, true;
 }
 
-DumpAssembly :: (builder : *StringBuilder, bytes : []u8) -> bool
+Disassemble :: (builder : *StringBuilder, bytes : []u8) -> bool
 {
     cursor := 0;
     while cursor < bytes.count
@@ -347,10 +347,10 @@ DumpAssembly :: (builder : *StringBuilder, bytes : []u8) -> bool
     return true;
 }
 
-DumpAssembly :: inline (bytes : []u8) -> bool
+Disassemble :: inline (bytes : []u8) -> bool
 {
     builder : StringBuilder;
-    if !DumpAssembly (*builder, bytes)
+    if !Disassemble (*builder, bytes)
         return false;
 
     Println (StringBuilderBuild (*builder));
