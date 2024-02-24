@@ -189,7 +189,8 @@ ParseInstruction :: (parser : *AsmParser, bytes : *[..]u8, opcode : OpCode) -> b
         if !ok
             return false;
 
-        if type == .Void
+        if type == .Void ||
+        (opcode == .Neg && (type == .U8 || type == .U16 || type == .U32 || type == .U64))
         {
             SyntaxError (parser, "Invalid type % for % instruction:\n%",
                 Asm_Type_Names[type], Asm_Mnemonics[opcode], LexerGetLine (parser));
