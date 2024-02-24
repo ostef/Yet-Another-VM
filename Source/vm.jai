@@ -12,8 +12,8 @@ VirtualMachine :: struct
 
 OpCode :: enum u8
 {
-    No_Op;
     Halt;
+    No_Op;
 
     Add;
     Sub;
@@ -23,6 +23,8 @@ OpCode :: enum u8
     Push_Const;
     Pop;
 }
+
+OpCode_Count :: #run type_info (OpCode).values.count;
 
 ValueType :: enum u8
 {
