@@ -43,7 +43,16 @@ main :: ()
     vm.instruction_pointer = bytes.data;
     vm.stack_pointer = stack.data;
 
-    Execute (*vm);
+    status := Execute (*vm);
+
+    if #complete status ==
+    {
+    case .Ok; Println ("Ok");
+    case .Program_Halted; Println ("Program halted");
+    case .Invalid_OpCode; Println ("Invalid opcode");
+    case .Invalid_Instruction; Println ("Invalid instruction");
+    case .Invalid_Type_Operand; Println ("Invalid type operand");
+    }
 }
 
 #run
