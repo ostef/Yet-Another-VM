@@ -39,6 +39,8 @@ OpCode :: enum u8
     Push_Local;
     Pop;
     Pop_Local;
+
+    Cast;
 }
 
 OpCode_Count :: #run type_info (OpCode).values.count;
@@ -74,6 +76,7 @@ ReadInstructionOperand :: inline (using vm : *VirtualMachine, $T : Type) -> T #m
 {
     value := (cast (*T) instruction_pointer).*;
     instruction_pointer += size_of (T);
+    Println ("> %", value);
 
     return value;
 }
@@ -494,6 +497,83 @@ ExecutePopLocal :: inline (using vm : *VirtualMachine) -> ExecuteStatus
     return .Ok;
 }
 
+ExecuteCast :: inline (using vm : *VirtualMachine) -> ExecuteStatus
+{
+    Helper :: ($From : Type) #expand
+    {
+        if #complete `to_type ==
+        {
+        case .Void;
+            `return .Invalid_Type_Operand;
+        case .U8;
+            v := Pop (`vm, From);
+            Push (`vm, u8, cast (u8) v);
+        case .S8;
+            v := Pop (`vm, From);
+            Push (`vm, s8, cast (s8) v);
+        case .U16;
+            v := Pop (`vm, From);
+            Push (`vm, u16, cast (u16) v);
+        case .S16;
+            v := Pop (`vm, From);
+            Push (`vm, s16, cast (s16) v);
+        case .U32;
+            v := Pop (`vm, From);
+            Push (`vm, u32, cast (u32) v);
+        case .S32;
+            v := Pop (`vm, From);
+            Push (`vm, s32, cast (s32) v);
+        case .U64;
+            v := Pop (`vm, From);
+            Push (`vm, u64, cast (u64) v);
+        case .S64;
+            v := Pop (`vm, From);
+            Push (`vm, s64, cast (s64) v);
+        case .F32;
+            v := Pop (`vm, From);
+            Push (`vm, float32, cast (float32) v);
+        case .F64;
+            v := Pop (`vm, From);
+            Push (`vm, float64, cast (float64) v);
+        case;
+            `return .Invalid_Instruction;
+        }
+    }
+
+    from_type := ReadInstructionOperand (vm, ValueType);
+    to_type := ReadInstructionOperand (vm, ValueType);
+
+    if #complete from_type ==
+    {
+    case .Void;
+        return .Invalid_Type_Operand;
+    case .U8;
+        Helper (u8);
+    case .S8;
+        Helper (s8);
+    case .U16;
+        Helper (u16);
+    case .S16;
+        Helper (s16);
+    case .U32;
+        Helper (u32);
+    case .S32;
+        Helper (s32);
+    case .U64;
+        Helper (u64);
+    case .S64;
+        Helper (s64);
+    case .F32;
+        Helper (float32);
+    case .F64;
+        Helper (float64);
+    case;
+        return .Invalid_Instruction;
+    }
+
+    return .Ok;
+}
+
 ExecuteNextInstruction :: inline (using vm : *VirtualMachine) -> ExecuteStatus
 {
     opcode := ReadInstructionOpCode (vm);
@@ -543,6 +623,8 @@ ExecuteNextInstruction :: inline (using vm : *VirtualMachine) -> ExecuteStatus
         return ExecutePop (vm);
     case .Pop_Local;
         return ExecutePopLocal (vm);
+    case .Cast;
+        return ExecuteCast (vm);
     }
 
     return .Invalid_OpCode;

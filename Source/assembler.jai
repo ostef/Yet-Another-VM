@@ -34,6 +34,8 @@ Asm_Mnemonics :: #run -> [OpCode_Count]string
         case .Push_Local; return "push_local";
         case .Pop; return "pop";
         case .Pop_Local; return "pop_local";
+
+        case .Cast; return "cast";
         }
     }
 
@@ -269,6 +271,36 @@ ParseInstruction :: (parser : *AsmParser, bytes : *[..]u8, opcode : OpCode) -> b
         ArrayPush (bytes, cast (u8) type);
 
         return ParseConstantValue (parser, bytes, .U32);
+
+    case .Cast;
+        from_type, ok := ParseType (parser);
+        if !ok
+            return false;
+
+        if from_type == .Void
+        {
+            SyntaxError (parser, "Invalid type % for % instruction:\n%",
+                Asm_Type_Names[from_type], Asm_Mnemonics[opcode], LexerGetLine (parser));
+
+            return false;
+        }
+
+        to_type:, ok = ParseType (parser);
+        if !ok
+            return false;
+
+        if to_type == .Void
+        {
+            SyntaxError (parser, "Invalid type % for % instruction:\n%",
+                Asm_Type_Names[to_type], Asm_Mnemonics[opcode], LexerGetLine (parser));
+
+            return false;
+        }
+
+        ArrayPush (bytes, cast (u8) from_type);
+        ArrayPush (bytes, cast (u8) to_type);
+
+        return true;
     }
 }
 
@@ -423,6 +455,25 @@ Disassemble :: (builder : *StringBuilder, bytes : []u8) -> bool
             cursor += size_of (u32);
 
             StringBuilderAppend (builder, " % %", Asm_Type_Names[type], stack_offset);
+
+        case .Cast;
+            if cursor >= bytes.count
+                return false;
+
+            from_type := bytes[cursor];
+            cursor += 1;
+            if from_type >= Asm_Type_Names.count
+                return false;
+
+            if cursor >= bytes.count
+                return false;
+
+            to_type := bytes[cursor];
+            cursor += 1;
+            if to_type >= Asm_Type_Names.count
+                return false;
+
+            StringBuilderAppend (builder, " % %", Asm_Type_Names[from_type], Asm_Type_Names[to_type]);
         }
 
         StringBuilderAppend (builder, "\n");
