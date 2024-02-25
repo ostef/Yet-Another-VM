@@ -363,6 +363,7 @@ ExecuteNextInstruction :: inline (using vm : *VirtualMachine) -> ExecuteStatus
     if #complete opcode ==
     {
     case .No_Op;
+        return .Ok;
     case .Halt;
         return .Program_Halted;
     case .Add;
