@@ -14,5 +14,6 @@ push_local f32 8
 add f32                 ; 69000 + 105
 neg f32
 ; Result = f32 -69105
-pop_local f32 0 ; Store result in local variable at offset 0
+push_const f32 -69105
+compeq f32
 halt

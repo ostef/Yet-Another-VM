@@ -27,6 +27,13 @@ OpCode :: enum u8
     Xor;
     Not;
 
+    Comp_Eq;
+    Comp_Ne;
+    Comp_Lt;
+    Comp_Le;
+    Comp_Gt;
+    Comp_Ge;
+
     Local_Var;
     Push_Const;
     Push_Local;
@@ -283,6 +290,56 @@ ExecuteNot :: (using vm : *VirtualMachine) -> ExecuteStatus
     return .Ok;
 }
 
+CompHelperForAllTypes :: (using vm : *VirtualMachine, $func : (a : $T, b : T) -> bool) -> ExecuteStatus
+{
+    Helper :: ($T : Type) #expand
+    {
+        a := Pop (`vm, T);
+        b := Pop (`vm, T);
+        Push (`vm, bool, `f (a, b));
+    }
+
+    type := ReadInstructionOperand (vm, ValueType);
+
+    f :: func;
+    if #complete type ==
+    {
+    case .Void;
+       return .Invalid_Type_Operand;
+    case .U8;
+        Helper (u8);
+    case .S8;
+        Helper (s8);
+    case .U16;
+        Helper (u16);
+    case .S16;
+        Helper (s16);
+    case .U32;
+        Helper (u32);
+    case .S32;
+        Helper (s32);
+    case .U64;
+        Helper (u64);
+    case .S64;
+        Helper (s64);
+    case .F32;
+        Helper (float32);
+    case .F64;
+        Helper (float64);
+    case;
+        return .Invalid_Instruction;
+    }
+
+    return .Ok;
+}
+
+ExecuteCompEq :: #bake_arguments CompHelperForAllTypes (func = (a, b) => a == b);
+ExecuteCompNe :: #bake_arguments CompHelperForAllTypes (func = (a, b) => a != b);
+ExecuteCompLt :: #bake_arguments CompHelperForAllTypes (func = (a, b) => a < b);
+ExecuteCompLe :: #bake_arguments CompHelperForAllTypes (func = (a, b) => a <= b);
+ExecuteCompGt :: #bake_arguments CompHelperForAllTypes (func = (a, b) => a > b);
+ExecuteCompGe :: #bake_arguments CompHelperForAllTypes (func = (a, b) => a >= b);
+
 ExecuteLocalVar :: ExecutePushConst;
 
 ExecutePushConst :: inline (using vm : *VirtualMachine) -> ExecuteStatus
@@ -464,6 +521,18 @@ ExecuteNextInstruction :: inline (using vm : *VirtualMachine) -> ExecuteStatus
         return ExecuteXor (vm);
     case .Not;
         return ExecuteNot (vm);
+    case .Comp_Eq;
+        return ExecuteCompEq (vm);
+    case .Comp_Ne;
+        return ExecuteCompNe (vm);
+    case .Comp_Lt;
+        return ExecuteCompLt (vm);
+    case .Comp_Le;
+        return ExecuteCompLe (vm);
+    case .Comp_Gt;
+        return ExecuteCompGt (vm);
+    case .Comp_Ge;
+        return ExecuteCompGe (vm);
     case .Local_Var;
         return ExecuteLocalVar (vm);
     case .Push_Const;

@@ -22,6 +22,13 @@ Asm_Mnemonics :: #run -> [OpCode_Count]string
         case .Xor; return "xor";
         case .Not; return "not";
 
+        case .Comp_Eq; return "compeq";
+        case .Comp_Ne; return "compne";
+        case .Comp_Lt; return "complt";
+        case .Comp_Le; return "comple";
+        case .Comp_Gt; return "compgt";
+        case .Comp_Ge; return "compge";
+
         case .Local_Var; return "local_var";
         case .Push_Const; return "push_const";
         case .Push_Local; return "push_local";
@@ -198,6 +205,12 @@ ParseInstruction :: (parser : *AsmParser, bytes : *[..]u8, opcode : OpCode) -> b
     case .Or; #through;
     case .Xor; #through;
     case .Not; #through;
+    case .Comp_Eq; #through;
+    case .Comp_Ne; #through;
+    case .Comp_Lt; #through;
+    case .Comp_Le; #through;
+    case .Comp_Gt; #through;
+    case .Comp_Ge; #through;
     case .Pop;
         type, ok := ParseType (parser);
         if !ok
@@ -325,6 +338,12 @@ Disassemble :: (builder : *StringBuilder, bytes : []u8) -> bool
         case .Or; #through;
         case .Xor; #through;
         case .Not; #through;
+        case .Comp_Eq; #through;
+        case .Comp_Ne; #through;
+        case .Comp_Lt; #through;
+        case .Comp_Le; #through;
+        case .Comp_Gt; #through;
+        case .Comp_Ge; #through;
         case .Pop;
             if cursor >= bytes.count
                 return false;
