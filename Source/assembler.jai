@@ -34,6 +34,7 @@ Asm_Mnemonics :: #run -> [OpCode_Count]string
         case .Push_Local; return "push_local";
         case .Pop; return "pop";
         case .Pop_Local; return "pop_local";
+        case .Swap; return "swap";
 
         case .Cast; return "cast";
         }
@@ -272,6 +273,7 @@ ParseInstruction :: (parser : *AsmParser, bytes : *[..]u8, opcode : OpCode) -> b
 
         return ParseConstantValue (parser, bytes, .U32);
 
+    case .Swap; #through;
     case .Cast;
         from_type, ok := ParseType (parser);
         if !ok
@@ -456,6 +458,7 @@ Disassemble :: (builder : *StringBuilder, bytes : []u8) -> bool
 
             StringBuilderAppend (builder, " % %", Asm_Type_Names[type], stack_offset);
 
+        case .Swap; #through;
         case .Cast;
             if cursor >= bytes.count
                 return false;
