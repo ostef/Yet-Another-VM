@@ -21,6 +21,11 @@ OpCode :: enum u8
     Mul;
     Div;
 
+    And;
+    Or;
+    Xor;
+    Not;
+
     Push_Const;
     Pop;
 }
@@ -146,6 +151,40 @@ BinopHelperForAllTypes :: (using vm : *VirtualMachine, $func : (a : $T, b : T) -
     return .Ok;
 }
 
+BinopHelperForIntegerTypes :: (using vm : *VirtualMachine, $func : (a : $T, b : T) -> T) -> ExecuteStatus
+{
+    type := ReadInstructionOperand (vm, ValueType);
+
+    f :: func;
+    if #complete type ==
+    {
+    case .Void; #through;
+    case .F32; #through;
+    case .F64;
+       return .Invalid_Type_Operand;
+    case .U8;
+        BinopHelper (u8);
+    case .S8;
+        BinopHelper (s8);
+    case .U16;
+        BinopHelper (u16);
+    case .S16;
+        BinopHelper (s16);
+    case .U32;
+        BinopHelper (u32);
+    case .S32;
+        BinopHelper (s32);
+    case .U64;
+        BinopHelper (u64);
+    case .S64;
+        BinopHelper (s64);
+    case;
+        return .Invalid_Instruction;
+    }
+
+    return .Ok;
+}
+
 ExecuteAdd :: #bake_arguments BinopHelperForAllTypes (func = (a, b) => a + b);
 ExecuteSub :: #bake_arguments BinopHelperForAllTypes (func = (a, b) => a - b);
 
@@ -188,6 +227,57 @@ ExecuteNeg :: (using vm : *VirtualMachine) -> ExecuteStatus
 
 ExecuteMul :: #bake_arguments BinopHelperForAllTypes (func = (a, b) => a * b);
 ExecuteDiv :: #bake_arguments BinopHelperForAllTypes (func = (a, b) => a / b);
+
+ExecuteAnd :: #bake_arguments BinopHelperForIntegerTypes (func = (a, b) => a & b);
+ExecuteOr :: #bake_arguments BinopHelperForIntegerTypes (func = (a, b) => a | b);
+ExecuteXor :: #bake_arguments BinopHelperForIntegerTypes (func = (a, b) => a ^ b);
+
+ExecuteNot :: (using vm : *VirtualMachine) -> ExecuteStatus
+{
+    Helper :: ($T : Type) #expand
+    {
+        v := Pop (`vm, T);
+        Push (`vm, T, v);
+    }
+
+    type := ReadInstructionOperand (vm, ValueType);
+
+    if #complete type ==
+    {
+    case .Void; #through;
+    case .F32; #through;
+    case .F64;
+       return .Invalid_Type_Operand;
+    case .U8;
+        v := Pop (vm, u8);
+        Push (vm, u8, v ^ 0xff);
+    case .S8;
+        v := Pop (vm, s8);
+        Push (vm, s8, v ^ 0xff);
+    case .U16;
+        v := Pop (vm, u16);
+        Push (vm, u16, v ^ 0xffff);
+    case .S16;
+        v := Pop (vm, s16);
+        Push (vm, s16, v ^ 0xffff);
+    case .U32;
+        v := Pop (vm, u32);
+        Push (vm, u32, v ^ 0xffffffff);
+    case .S32;
+        v := Pop (vm, s32);
+        Push (vm, s32, v ^ 0xffffffff);
+    case .U64;
+        v := Pop (vm, u64);
+        Push (vm, u64, v ^ 0xffffffffffffffff);
+    case .S64;
+        v := Pop (vm, s64);
+        Push (vm, s64, v ^ 0xffffffffffffffff);
+    case;
+        return .Invalid_Instruction;
+    }
+
+    return .Ok;
+}
 
 ExecutePushConst :: inline (using vm : *VirtualMachine) -> ExecuteStatus
 {
@@ -285,6 +375,14 @@ ExecuteNextInstruction :: inline (using vm : *VirtualMachine) -> ExecuteStatus
         return ExecuteMul (vm);
     case .Div;
         return ExecuteDiv (vm);
+    case .And;
+        return ExecuteAnd (vm);
+    case .Or;
+        return ExecuteOr (vm);
+    case .Xor;
+        return ExecuteXor (vm);
+    case .Not;
+        return ExecuteNot (vm);
     case .Push_Const;
         return ExecutePushConst (vm);
     case .Pop;

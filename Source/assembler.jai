@@ -10,11 +10,18 @@ Asm_Mnemonics :: #run -> [OpCode_Count]string
         {
         case .Halt; return "halt";
         case .No_Op; return "noop";
+
         case .Add; return "add";
         case .Sub; return "sub";
         case .Neg; return "neg";
         case .Mul; return "mul";
         case .Div; return "div";
+
+        case .And; return "and";
+        case .Or; return "or";
+        case .Xor; return "xor";
+        case .Not; return "not";
+
         case .Push_Const; return "push_const";
         case .Pop; return "pop";
         }
@@ -184,13 +191,22 @@ ParseInstruction :: (parser : *AsmParser, bytes : *[..]u8, opcode : OpCode) -> b
     case .Neg; #through;
     case .Mul; #through;
     case .Div; #through;
+    case .And; #through;
+    case .Or; #through;
+    case .Xor; #through;
+    case .Not; #through;
     case .Pop;
         type, ok := ParseType (parser);
         if !ok
             return false;
 
-        if type == .Void
-        || (opcode == .Neg && (type == .U8 || type == .U16 || type == .U32 || type == .U64))
+        invalid_type := type == .Void;
+        invalid_type |= opcode == .Neg
+            && (type == .U8 || type == .U16 || type == .U32 || type == .U64);
+        invalid_type |= (opcode == .And || opcode == .Or || opcode == .Xor || opcode == .Not)
+            && (type == .F32 || type == .F64);
+
+        if invalid_type
         {
             SyntaxError (parser, "Invalid type % for % instruction:\n%",
                 Asm_Type_Names[type], Asm_Mnemonics[opcode], LexerGetLine (parser));
@@ -283,6 +299,10 @@ Disassemble :: (builder : *StringBuilder, bytes : []u8) -> bool
         case .Neg; #through;
         case .Mul; #through;
         case .Div; #through;
+        case .And; #through;
+        case .Or; #through;
+        case .Xor; #through;
+        case .Not; #through;
         case .Pop;
             if cursor >= bytes.count
                 return false;
