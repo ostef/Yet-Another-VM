@@ -22,8 +22,11 @@ Asm_Mnemonics :: #run -> [OpCode_Count]string
         case .Xor; return "xor";
         case .Not; return "not";
 
+        case .Local_Var; return "local_var";
         case .Push_Const; return "push_const";
+        case .Push_Local; return "push_local";
         case .Pop; return "pop";
+        case .Pop_Local; return "pop_local";
         }
     }
 
@@ -218,6 +221,7 @@ ParseInstruction :: (parser : *AsmParser, bytes : *[..]u8, opcode : OpCode) -> b
 
         return true;
 
+    case .Local_Var; #through;
     case .Push_Const;
         type, ok := ParseType (parser);
         if !ok
@@ -234,6 +238,24 @@ ParseInstruction :: (parser : *AsmParser, bytes : *[..]u8, opcode : OpCode) -> b
         ArrayPush (bytes, cast (u8) type);
 
         return ParseConstantValue (parser, bytes, type);
+
+    case .Push_Local; #through;
+    case .Pop_Local;
+        type, ok := ParseType (parser);
+        if !ok
+            return false;
+
+        if type == .Void
+        {
+            SyntaxError (parser, "Invalid type % for % instruction:\n%",
+                Asm_Type_Names[type], Asm_Mnemonics[opcode], LexerGetLine (parser));
+
+            return false;
+        }
+
+        ArrayPush (bytes, cast (u8) type);
+
+        return ParseConstantValue (parser, bytes, .U32);
     }
 }
 
@@ -314,6 +336,7 @@ Disassemble :: (builder : *StringBuilder, bytes : []u8) -> bool
 
             StringBuilderAppend (builder, " %", Asm_Type_Names[type]);
 
+        case .Local_Var; #through;
         case .Push_Const;
             if cursor >= bytes.count
                 return false;
@@ -363,6 +386,24 @@ Disassemble :: (builder : *StringBuilder, bytes : []u8) -> bool
             }
 
             cursor += Value_Type_Size[type];
+
+        case .Push_Local; #through;
+        case .Pop_Local;
+            if cursor >= bytes.count
+                return false;
+
+            type := bytes[cursor];
+            cursor += 1;
+            if type >= Asm_Type_Names.count
+                return false;
+
+            if cursor + size_of (u32) > bytes.count
+                return false;
+
+            stack_offset := (cast (*u32) *bytes[cursor]).*;
+            cursor += size_of (u32);
+
+            StringBuilderAppend (builder, " % %", Asm_Type_Names[type], stack_offset);
         }
 
         StringBuilderAppend (builder, "\n");

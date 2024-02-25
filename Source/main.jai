@@ -41,6 +41,7 @@ main :: ()
     stack : [1024]u8 = ---;
     vm : VirtualMachine;
     vm.instruction_pointer = bytes.data;
+    vm.stack_base = stack.data;
     vm.stack_pointer = stack.data;
 
     status := Execute (*vm);

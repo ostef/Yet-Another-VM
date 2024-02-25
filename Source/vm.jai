@@ -1,6 +1,7 @@
 RegistersState :: struct
 {
     instruction_pointer : *u8;
+    stack_base : *u8;
     stack_pointer : *u8;
 }
 
@@ -26,8 +27,11 @@ OpCode :: enum u8
     Xor;
     Not;
 
+    Local_Var;
     Push_Const;
+    Push_Local;
     Pop;
+    Pop_Local;
 }
 
 OpCode_Count :: #run type_info (OpCode).values.count;
@@ -279,6 +283,8 @@ ExecuteNot :: (using vm : *VirtualMachine) -> ExecuteStatus
     return .Ok;
 }
 
+ExecuteLocalVar :: ExecutePushConst;
+
 ExecutePushConst :: inline (using vm : *VirtualMachine) -> ExecuteStatus
 {
     type := ReadInstructionOperand (vm, ValueType);
@@ -323,6 +329,43 @@ ExecutePushConst :: inline (using vm : *VirtualMachine) -> ExecuteStatus
     return .Ok;
 }
 
+ExecutePushLocal :: inline (using vm : *VirtualMachine) -> ExecuteStatus
+{
+    type := ReadInstructionOperand (vm, ValueType);
+    stack_offset := ReadInstructionOperand (vm, u32);
+    ptr := stack_base + stack_offset;
+
+    if #complete type ==
+    {
+    case .Void;
+        return .Invalid_Type_Operand;
+    case .U8;
+        Push (vm, u8, (cast (*u8) ptr).*);
+    case .S8;
+        Push (vm, s8, (cast (*s8) ptr).*);
+    case .U16;
+        Push (vm, u16, (cast (*u16) ptr).*);
+    case .S16;
+        Push (vm, s16, (cast (*s16) ptr).*);
+    case .U32;
+        Push (vm, u32, (cast (*u32) ptr).*);
+    case .S32;
+        Push (vm, s32, (cast (*s32) ptr).*);
+    case .U64;
+        Push (vm, u64, (cast (*u64) ptr).*);
+    case .S64;
+        Push (vm, s64, (cast (*s64) ptr).*);
+    case .F32;
+        Push (vm, float32, (cast (*float32) ptr).*);
+    case .F64;
+        Push (vm, float64, (cast (*float64) ptr).*);
+    case;
+        return .Invalid_Instruction;
+    }
+
+    return .Ok;
+}
+
 ExecutePop :: inline (using vm : *VirtualMachine) -> ExecuteStatus
 {
     type := ReadInstructionOperand (vm, ValueType);
@@ -357,6 +400,43 @@ ExecutePop :: inline (using vm : *VirtualMachine) -> ExecuteStatus
     return .Ok;
 }
 
+ExecutePopLocal :: inline (using vm : *VirtualMachine) -> ExecuteStatus
+{
+    type := ReadInstructionOperand (vm, ValueType);
+    stack_offset := ReadInstructionOperand (vm, u32);
+    ptr := stack_base + stack_offset;
+
+    if #complete type ==
+    {
+    case .Void;
+        return .Invalid_Type_Operand;
+    case .U8;
+        (cast (*u8) ptr).* = Pop (vm, u8);
+    case .S8;
+        (cast (*s8) ptr).* = Pop (vm, s8);
+    case .U16;
+        (cast (*u16) ptr).* = Pop (vm, u16);
+    case .S16;
+        (cast (*s16) ptr).* = Pop (vm, s16);
+    case .U32;
+        (cast (*u32) ptr).* = Pop (vm, u32);
+    case .S32;
+        (cast (*s32) ptr).* = Pop (vm, s32);
+    case .U64;
+        (cast (*u64) ptr).* = Pop (vm, u64);
+    case .S64;
+        (cast (*s64) ptr).* = Pop (vm, s64);
+    case .F32;
+        (cast (*float32) ptr).* = Pop (vm, float32);
+    case .F64;
+        (cast (*float64) ptr).* = Pop (vm, float64);
+    case;
+        return .Invalid_Instruction;
+    }
+
+    return .Ok;
+}
+
 ExecuteNextInstruction :: inline (using vm : *VirtualMachine) -> ExecuteStatus
 {
     opcode := ReadInstructionOpCode (vm);
@@ -384,10 +464,16 @@ ExecuteNextInstruction :: inline (using vm : *VirtualMachine) -> ExecuteStatus
         return ExecuteXor (vm);
     case .Not;
         return ExecuteNot (vm);
+    case .Local_Var;
+        return ExecuteLocalVar (vm);
     case .Push_Const;
         return ExecutePushConst (vm);
+    case .Push_Local;
+        return ExecutePushLocal (vm);
     case .Pop;
         return ExecutePop (vm);
+    case .Pop_Local;
+        return ExecutePopLocal (vm);
     }
 
     return .Invalid_OpCode;

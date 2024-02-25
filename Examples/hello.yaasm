@@ -1,8 +1,18 @@
-push_const f32 69
-push_const f32 1000
+; One day we'll be able to give these a name and use it instead of an offset value
+; We currently don't check for this, but local variables must be declared before
+; any other instruction. This is why even though it's encoding is the same as push_const
+; it is still a separate instruction (though, we might merge them at some point and
+; make local_var a higher level assembler only instruction)
+local_var f32 1000
+local_var f32 69
+local_var f32 105
+
+push_local f32 0
+push_local f32 4
 mul f32                 ; 69 * 1000
-push_const f32 105
+push_local f32 8
 add f32                 ; 69000 + 105
 neg f32
 ; Result = f32 -69105
+pop_local f32 0 ; Store result in local variable at offset 0
 halt
